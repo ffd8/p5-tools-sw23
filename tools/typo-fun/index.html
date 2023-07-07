@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>typo-fun</title>
+	<meta charset="utf-8">
+	<!-- Compiled w/ P5LIVE, http://github.com/ffd8/p5live -->
+	<style type="text/css">
+		body{
+			margin:0;
+			overflow:hidden;
+		}
+		canvas{
+			position:fixed;
+			top:0;
+			left:0;
+			z-index:-1;
+			width:100vw;
+			height:100vh;
+			margin:0;
+		}
+	</style>
+	<script type="text/javascript">
+		// eco-mode = only render if window focused
+		window.onblur = function () {
+			noLoop();
+		};
+		window.onfocus = function () {
+			loop();
+		};
+	</script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/p5.glitch@latest/p5.glitch.js"></script>
+</head>
+<body>
+
+<script type="text/javascript">
+
+// ------------------- cerdits ---------------------------------------------------------------------------
+  var credits = { 
+	names : [ 
+		'Tim' // link to website if you have it <a href="URL" target="_blank">first.lastname</a> 
+		,'Stedmen'
+    , 'Maurizio'
+    , 'Gullo'
+	] 
+	,class : 'IDCE SW23' 
+	,description : `Minmal genetative verb poetry abstraction - or: just have fun with type!` 
+} 
+
+// ------------------------------------------------------------------------------------------------------  
+
+
+/* CUSTOM FUNCTIONS FOR P5LIVE */
+// keep fullscreen if window resized
+function windowResized() {
+	resizeCanvas(windowWidth, windowHeight);
+}
+
+// custom ease function
+function ease(iVal, oVal, eVal){
+	return oVal += (iVal - oVal) * eVal;
+}
+
+// processing compatibility
+function println(msg){
+	print(msg);
+}
+
+
+// todos:
+// 3d
+// shadow easer: white version on top
+// word list poetry
+// rotate the letters separately?
+// Wrtie white shapoes first to arase and and give more contrats, how?
+// buttons, random, surprize, reset
+
+let points, font
+let modAmp, modFreq
+let word = []
+let npoints
+let osc
+let weight
+let	fSize
+let wtext
+let arot
+
+let surSize=[], surAmp=[], surFreq=[], surWeight=[], surDens= []
+
+let layer			// Layer to copy rthe graphics
+
+
+let libs = ["includes/libs/p5.glitch.js"] // glitch library
+let glitch;
+
+
+
+
+function preload(){
+	// lpad fgornt from glitch.me
+	font = loadFont('./data/Akkurat-Bold.ttf')	
+	
+	
+}
+
+
+function setup() {
+	
+	angleMode(DEGREES)  
+	rectMode(CENTER)
+	strokeCap(SQUARE);
+
+	
+	createCanvas(windowWidth, windowHeight)		// holds the rest
+	//layer = createGraphics(width,height,WEBGL)		// holds the text layer for 3d
+	layer = createGraphics(width,height)		// holds the text layer for 2d
+
+	
+	glitch = new Glitch(this);					//glitch instance
+	
+	word = ["make","destroy", "absorb", "attack", "linger",
+			"beam", "blast", "collide", "crackle", "deviate", 
+			"envelop", "glisten","grope", "hobble", "ignite", 
+			"jostle", "lurk", "muse", "plunge", "prickle", 
+			"recoil", "revolt", "scorch", "scrape", 
+			"shrivel", "slurp", "snarl", "stumble", 
+			"swoon", "tussle", "wreck", "yank"]		// list of words
+	
+	
+	surSize=[480, 525, 480] 
+	surAmp=[400, 200, 200]
+	surFreq=[0.3, 0.7, 0.3]
+	surWeight=[1, 50, 8] 
+	surDens= [0.08, 0.001, 0.07]
+	
+	modAmp = 200									// legth of the lines
+	modFreq = 0.7								// rotation frequency
+	npoints = 0.001								// outline points densioty
+	weight = 50									// line weight
+	fSize = 525								// font size
+	wtext = 0									// font selector
+	
+	// generate first point list 
+	points = genType(word[wtext], 300, 0.07)
+	
+	// generate GUI
+	guiInit()
+	
+}
+
+function draw() {
+	background(255,50)
+	
+	// twinkling 1 and - signs
+	twinkle(15)
+	
+	// line styling
+	layer.fill(0)
+	layer.stroke(0)
+	layer.strokeWeight(weight)
+
+	
+	
+	
+	// get the angle of rotation
+	arot = floor(frameCount*modFreq)%360
+	if(arot == 1){
+		wtext = floor(random(word.length-1))
+		//if (wtext == 0) {wtext=1} 
+		//else if (wtext == 1) {wtext=0}
+	}
+	
+	//generate the points
+	points = genType(word[wtext], fSize, npoints)
+
+	
+	// Here we wtite the lines
+	push()
+	layer.reset()	// needed to make the translation and rotation work
+	layer.clear()	// reset the transformation matrix
+	layer.translate(width/2, height/2+10*sin(frameCount))		// uncomment fot 2d
+	// loop over all points and draw the lines
+	// layer.rotateY(frameCount*modFreq/50)						//  uncomment for 3d
+	for(let i = 0; i < points.length; i++) {
+		let p = points[i]
+		p.x *= sin(frameCount*modFreq)		// add the rotation like effect
+		let wx = noise(frameCount*0.2)*5	// wiggle in x
+		let wy = noise(frameCount*0.22)*5	// wiggle in y
+		let wz = noise(frameCount*0.29)*5	// wiggle in y
+		let rx = modAmp*sin(frameCount*modFreq)	// line rotation x
+		let ry = modAmp*cos(frameCount*modFreq) // line rotation y
+		let rz = modAmp*sin(frameCount*modFreq*0.1) // line rotation z
+		//layer.stroke(255,255)
+		//layer.strokeWeight(weight/2)
+		//layer.circle(p.x,p.y,weight/3)
+		//layer.line(p.x + wx + 10, p.y + wy +10, p.x + rx +10, p.y + ry + 10)  // for 2d
+		layer.stroke(0)
+		layer.strokeWeight(weight)
+		//layer.line(p.x + wx, p.y + wy, 0, p.x + rx, p.y + ry, 100 + wx + rz)  // for 3d
+		layer.line(p.x + wx, p.y + wy, p.x + rx, p.y + ry)  // for 2d
+		
+	}
+	pop()
+	
+	//pinStripe(500*osc,360*osc,color(50),0.3)
+	
+	
+	// draw the image layer to the canvas
+	image(layer,0,0)
+	
+	// draw the glitched image layer every now and then
+	if(arot>1 && arot<3){
+		glitch.loadType("webp")		// type
+		glitch.pixelate(0.9)		// pixedlation 
+		glitch.loadQuality(0.2)		// quality
+		glitch.loadImage(layer)		// load the image layer in the glitch engine
+		glitch.randomBytes(1)		// glitch
+		glitch.buildImage()			// build
+		image(glitch.image,0,0)		// diplay on canvas
+	}
+}
+
+
+
+
+function mousePressed(){
+	//reset()
+}
+
+
+
+
+
+
+
+
+
+
+
+// -- helper functions -----------------------------------------------------------------------------------------------------
+
+function genType(txtString, txtSize, density) {
+	// grab bounding box of text
+	let bounds = font.textBounds(txtString, 0, 0, txtSize)
+
+	// textToPoints(txt, x, y, size, options)
+	let points = font.textToPoints(txtString, -bounds.w / 2, bounds.h / 2, txtSize, {
+		sampleFactor: density,
+		simplifyThreshold: 0
+	})
+	return points
+}
+
+
+function twinkle(nb){
+	
+	noStroke()
+	fill(100)
+	
+	for(let i = 0; i < nb; i++){
+		
+		push()
+		translate(random(width),random(height))
+		//circle(0,0,4)
+		rect(0,0,10,1)
+		rect(0,0,1,10)
+		pop()
+		
+		push()
+		translate(random(width),random(height))
+		//circle(0,0,4)
+		rect(0,0,10,1)
+		//rect(0,0,1,10)
+		pop()
+	}
+	
+	
+}
+
+function reset(){
+	modAmp = 50									// legth of the lines
+	modFreq = 0.3								// rotation frequency
+	npoints = 0.03								// outline points densioty
+	weight = 13									// line weight
+	fSize = 350									// font size
+	wtext = 0									// font selector
+	console.log("hello")
+}
+
+function surprise(){
+	
+	let s = floor(random(2.9))
+	modAmp = surAmp[s]									// legth of the lines
+	modFreq = surFreq[s]								// rotation frequency
+	npoints = surDens[s]								// outline points densioty
+	weight = surWeight[s]									// line weight
+	fSize = surSize[s]									// font size
+	print("hello dude!")
+	fSizeSlider.value(fSize)
+	modAmpSlider.value(modAmp)
+	densitySlider.value(npoints)
+	weightSlider.value(weight)
+	modFreqSlider.value(modFreq)
+}
+
+
+function guiInit(){
+	// create generic div (html container) 
+	let guiHolder = createDiv() 
+    .class('guiHolder') // add class for styling via CSS 
+	// use styled div as label 
+	
+ 
+    // create modFreq
+	createDiv('size ') 
+    .parent(guiHolder) // place inside gui div 
+    .class('label') // class for CSS 
+	fSizeSlider=createSlider(350, 600, fSize, 10) 
+    .parent(guiHolder) //  place inside gui div 
+    .class('slider') // class for CSS 
+    .input(function() { 
+      fSize=this.value() // use immediately, basic demo 
+    }) 
+   
+    
+ 
+	// create modAmp
+	createDiv('length ') 
+    .parent(guiHolder) // place inside gui div 
+    .class('label') // class for CSS 
+	modAmpSlider=createSlider(0, 500, modAmp, 1) 
+    .parent(guiHolder) //  place inside gui div 
+    .class('slider') // class for CSS 
+    .input(function() { 
+      modAmp=this.value() // use immediately, basic demo 
+    }) 
+    
+    
+	// create modFreq
+	createDiv('speed ') 
+    .parent(guiHolder) // place inside gui div 
+    .class('label') // class for CSS 
+	modFreqSlider=createSlider(0.1, 2, modFreq, 0.05) 
+    .parent(guiHolder) //  place inside gui div 
+    .class('slider') // class for CSS 
+    .input(function() { 
+      modFreq=this.value() // use immediately, basic demo 
+    }) 
+    
+    
+    // create weight
+	createDiv('weight ') 
+    .parent(guiHolder) // place inside gui div 
+    .class('label') // class for CSS 
+	weightSlider=createSlider(1, 50, weight, 0.1) 
+    .parent(guiHolder) //  place inside gui div 
+    .class('slider') // class for CSS 
+    .input(function() { 
+      weight=this.value() // use immediately, basic demo 
+    }) 
+    
+    // create density
+	createDiv('density ') 
+    .parent(guiHolder) // place inside gui div 
+    .class('label') // class for CSS 
+	densitySlider=createSlider(0.001, 0.1, npoints, 0.001)
+    .parent(guiHolder) //  place inside gui div 
+    .class('slider') // class for CSS 
+    .input(function() { 
+      npoints=this.value() // use immediately, basic demo 
+    }) 
+    
+    // reset button
+    createDiv(' .') 
+    .parent(guiHolder) // place inside gui div 
+    .class('label') // class for CSS 
+    createButton("")
+    .parent(guiHolder)
+    .class('surprise')
+    .mousePressed(surprise)
+    
+    
+    
+ 
+  // create <style> tag for custom css (note `backticks` for multi-line value!) 
+  createElement('style', ` 
+  *{ 
+    outline: none; 
+    box-sizing: border-box; 
+  } 
+    .guiHolder{ 
+      position: fixed; 
+      right: 50px; 
+      top: 50px; 
+      //border: 2px solid #fff; 
+      //border-radius: 10px; 
+      padding: 10px; 
+      //background: pink;
+      
+    } 
+    .label{ 
+      color:#000; 
+      font-family:sans-serif; 
+      font-size:10pt; 
+      //text-decoration:underline; 
+      padding:5px; 
+      opacity:0.7;
+    } 
+    .slider{ 
+    	-webkit-appearance: none;  /* Override default CSS styles */
+		appearance: none;
+		border-radius: 0%;
+		width: 100%; 
+    	background: #aaa;
+    	color: #000;
+    	//cursor: pointer;
+    	opacity:0.7;
+    } 
+    
+    .slider::-webkit-slider-thumb {
+		-webkit-appearance: none;
+		appearance: none;
+		width: 10px;
+		height: 10px;
+		border: 0;
+		background: #000;
+		cursor: pointer;
+		opacity:0.7;
+	}
+	
+	.surprise{
+	-webkit-appearance: none;  /* Override default CSS styles */
+		appearance: none;
+		width: 35px;
+		height: 35px;
+		background: #aaa;
+		color: #000;
+		border-radius: 90%;
+		border: 2px solid #000;
+		border-width: 3.5px;
+		cursor: pointer;
+		//font-size: 20px;
+		//font-weight: 2000;
+		box-shadow: none;
+		opacity:0.7;
+	
+	}
+	
+  `) 
+
+}
+</script>
+
+</body>
+</html>

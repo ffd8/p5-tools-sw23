@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>pixelattempt5-backgroundpicker_001</title>
+	<meta charset="utf-8">
+	<!-- Compiled w/ P5LIVE, http://github.com/ffd8/p5live -->
+	<style type="text/css">
+		body{
+			margin:0;
+			overflow:hidden;
+		}
+		canvas{
+			position:fixed;
+			top:0;
+			left:0;
+			z-index:-1;
+			width:100vw;
+			height:100vh;
+			margin:0;
+		}
+	</style>
+	<script type="text/javascript">
+		// eco-mode = only render if window focused
+		window.onblur = function () {
+			noLoop();
+		};
+		window.onfocus = function () {
+			loop();
+		};
+	</script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/addons/p5.sound.min.js"></script>
+</head>
+<body style="background: rgb(0, 0, 0);">
+
+<script type="text/javascript">
+//pixelattempt5-backgroundpicker_001
+
+/* CUSTOM FUNCTIONS FOR P5LIVE */
+// keep fullscreen if window resized
+function windowResized() {
+	resizeCanvas(windowWidth, windowHeight);
+}
+
+// custom ease function
+function ease(iVal, oVal, eVal){
+	return oVal += (iVal - oVal) * eVal;
+}
+
+// processing compatibility
+function println(msg){
+	print(msg);
+}
+
+
+var credits = {
+	names: [
+		'Linnea.Kunesh' // link to website if you have it <a href="URL" target="_blank">first.lastname</a> 
+	],
+	class: 'IDCE SW23',
+	description: `pixel-pad is a drawing tool for crafting simple pixelated sketches.`
+}
+let myButton
+let colorPicker, bgColor;
+let pixelScale = 50
+let pg
+let textBox
+
+function setup() {
+	createCanvas(windowWidth, windowHeight)
+	noSmooth()
+	colorPicker = createColorPicker('#ed225d')
+	colorPicker.position(width / 2-80, height - 152)
+	colorPicker.input(function() {
+		pg.fill(colorPicker.color())
+	})
+	
+	bgColor = color(80, 163, 242)
+	bgPicker = createColorPicker(bgColor)
+	bgPicker.position(width / 2-4, height - 152)
+	bgPicker.input(function() {
+		bgColor = bgPicker.color()
+	})
+
+	pgSetup()
+	colorMode(RGB)
+	background(bgColor)
+	myButton = createButton('reset');
+	myButton.position(width / 2 + 78, height - 150)
+	myButton.mousePressed(function() {
+		pg.clear()
+	})
+
+function mouseDragged(){
+  line(pmouseX,pmouseY, mouseX,mouseY)
+}
+
+	button2 = createButton('save')
+	button2.position(width / 2 + 150, height - 150)
+	button2.mousePressed(saveDrawing)
+	mySlider = createSlider(6, 100, 40, 2)
+	mySlider.position(width / 2 - 250, height-150)
+	mySlider.input(function() {
+		pixelScale = mySlider.value()
+		pgSetup()
+	})
+
+}
+
+function pgSetup() {
+	pg = createGraphics(round(width / pixelScale), round(height / pixelScale))
+	pg.rectMode(CENTER)
+	pg.noStroke()
+	pg.fill(colorPicker.color())
+	pg.rect(pg.width/2, pg.height/2, 1)
+	setTimeout(function() {pg.clear()}, 200);
+}
+
+function draw() {
+	// if (myButton.mousePressed(changeBG)){
+	// 	bgColor = (80, 140, 242)
+	// }
+	background(bgColor)
+	if(mouseIsPressed) {
+		let x = floor(map(mouseX, 0, width, 0, pg.width)) //floor(random(pg.width))
+		let y = floor(map(mouseY, 0, height, 0, pg.height)) //floor(random(pg.height))
+		if(mouseY < height-150) {
+			pg.rect(x, y, 1)
+		}
+	}
+	image(pg, 0, 0, width, height)
+	//image(pg, 0, 0)
+}
+
+function keyPressed() {
+	if(key == 'S') {
+		pg.save('layer.png')
+		save('canvas.png')
+	}
+}
+
+function saveDrawing() {
+	pg.save("Picture.png")
+	save('canvas.png')
+	
+function stopTouchScrolling(canvas){
+// Prevent scrolling when touching the canvas
+document.body.addEventListener("touchstart", function (e) {
+    if (e.target == canvas) {
+        e.preventDefault();
+    }
+}, { passive: false });
+document.body.addEventListener("touchend", function (e) {
+    if (e.target == canvas) {
+        e.preventDefault();
+    }
+}, { passive: false });
+document.body.addEventListener("touchmove", function (e) {
+    if (e.target == canvas) {
+        e.preventDefault();
+    }
+}, { passive: false });
+
+}
+
+}
+</script>
+
+</body>
+</html>

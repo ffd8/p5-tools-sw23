@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Final ver2_001</title>
+	<meta charset="utf-8">
+	<!-- Compiled w/ P5LIVE, http://github.com/ffd8/p5live -->
+	<style type="text/css">
+		body{
+			margin:0;
+			overflow:hidden;
+		}
+		canvas{
+			position:fixed;
+			top:0;
+			left:0;
+			z-index:-1;
+			width:100vw;
+			height:100vh;
+			margin:0;
+		}
+	</style>
+	<script type="text/javascript">
+		// eco-mode = only render if window focused
+		window.onblur = function () {
+			noLoop();
+		};
+		window.onfocus = function () {
+			loop();
+		};
+	</script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/addons/p5.sound.min.js"></script>
+</head>
+<body style="background: rgb(0, 0, 0);">
+
+<script type="text/javascript">
+//Final ver2_001
+
+/* CUSTOM FUNCTIONS FOR P5LIVE */
+// keep fullscreen if window resized
+function windowResized() {
+	resizeCanvas(windowWidth, windowHeight);
+}
+
+// custom ease function
+function ease(iVal, oVal, eVal){
+	return oVal += (iVal - oVal) * eVal;
+}
+
+// processing compatibility
+function println(msg){
+	print(msg);
+}
+
+
+var credits = { 
+	names : [ 
+		'Eunbee.Lee' // link to website if you have it <a href="URL" target="_blank">first.lastname</a> 
+	] 
+	,class : 'IDCE SW23' 
+	,description : `grab a color from pictures and make your own painting` 
+} 
+//let mountain
+let matisse
+let c;
+let slider, speedx = 0
+let speedy = 0
+let lc = 8
+let layer
+let layer2
+let layer3D
+let slider1
+let slider2 
+let slider4
+let c2;
+let mountain2
+
+// let mySelect, drawMode; // global var for select + drawing mode 
+// let opts = ['1', '2', '3'] // array of options 
+
+// speedz = 0
+// speedaa = 0 
+
+
+function preload() { // loads an asset, BEFORE the setup()
+	matisse = loadImage('data/image/matisse.jpeg')
+    mountain2 = loadImage ('data/image/vangogh.jpeg')
+}
+
+function setup() {
+
+	//noCursor()
+	noStroke()
+	createCanvas(windowWidth, windowHeight)
+	pixelDensity(2)
+	matisse.resize(0, height) // resize an image, use 0 for auto aspectratio
+	mountain2.resize(width/5, height)
+	image(matisse, 0, 0, matisse.width, matisse.height)
+	image(mountain2, 100, 100, mountain2.width, mountain2.width)
+	slider = createSlider(.001, 20, .01, .001) // min, max, default, stepsize
+		.position(width /18, 140)
+	slider.style('width', '50px');
+	slider1 = createSlider(.001, 20, .01, .001) // min, max, default, stepsize
+	slider1.position(width /18, 170)
+	slider1.style('width', '50px');
+    slider2 = createSlider(.1, 1, .01, .001) // min, max, default, stepsize
+	slider2.position(width /18, 80)
+	slider2.style('width', '50px');
+	
+	//   slider3= createSlider(.1, 1, .01, .001) // min, max, default, stepsize
+	// slider3.position(width /9, 110)
+	// slider3.style('width', '50px');
+ 
+    slider4 = createSlider(.1, 1, .01, .001) // min, max, default, stepsize
+	slider4.position(width /18, 110)
+	slider4.style('width', '50px');
+
+ //   slider5 = createSlider(.1, 1, .01, .001) // min, max, default, stepsize
+	// slider5.position(width /9, 140)
+	// slider5.style('width', '50px');
+	
+	// 	mySelect = createSelect(); // create dropdown 
+	// mySelect.position(width / 7, 50); // set position z
+ 
+ 
+
+	layer = createGraphics(width, height)
+	layer3D = createGraphics(width, height, WEBGL)
+	layer3D.angleMode(DEGREES)
+	myButton = createButton('reset'); // give label 
+	myButton.position(width/18, 50); // set position 
+	myButton.mousePressed(setup); // run function when pressed 
+	layer2 = createGraphics(width, height)
+	
+	// 	for(let o of opts) {
+	// 	mySelect.option(o)
+	// }
+
+	// init with random option 
+// 	drawMode = random(opts)
+// 	mySelect.selected(drawMode);
+
+// 	// set drawMode var on change 
+// 	mySelect.changed(function() {
+// 		drawMode = this.value()
+// 	});
+
+// 	rectMode(CENTER);
+// 	stroke(255);
+// 	noFill();
+}
+
+function draw(){
+		// do something based on selected 
+	// if(drawMode == '1') {
+	// matisse = loadImage('data/image/matisse.jpg')
+ //   mountain2 = loadImage ('data/image/mountain2.jpg')
+		
+	// } else if(drawMode == '2') {
+	// 	rect(width / 2, height / 2, 400);
+	// 	rect(width / 2 + 200, height / 2 + 200, 400);
+	// } else if(drawMode == '3') {
+	// 	line(0, 0, width, height);
+	// 	line(width, 0, 0, height);
+	// }
+
+noFill()
+//	stroke(0, 255, random(200), 20)
+
+//let val = slider.value();
+//circle(val, 100, 100, 1);
+let val = slider.value();
+let val1 = slider1.value();
+let val2 = slider2.value()
+
+layer.noStroke()
+c = matisse.get(mouseX, mouseY);
+layer.fill(c);
+let x = sin(frameCount * .3) * width / 3
+let y = cos(frameCount* .21) * height / 3
+//let d = sin(speed * 10) * 100
+layer.circle(mouseX, mouseY, 1 + frameCount %x*.2/10);
+if(frameCount % 60 == 0) { // ~1x sec, do this code 
+	//	stroke(random(255), 0, 255)
+
+	noFill()
+	//	stroke(0, 255, random(200), 20)
+}
+
+layer2.noStroke()
+c2 = mountain2.get(mouseX+100, mouseY+100);
+layer2.fill(c2);
+let z = sin(frameCount * .3) * width / 3
+let h = cos(frameCount* .21) * height / 3
+//let d = sin(speed * 10) * 100
+layer2.rect(mouseX+100, mouseY+100, 1 + frameCount % h*.2/10);
+if(frameCount % 60 == 0) { // ~1x sec, do this code 
+	//	stroke(random(255), 0, 255)
+
+	noFill()
+	//	stroke(0, 255, random(200), 20)
+}
+push()
+	translate(width/2, height/2) // moves 0,0 coordinate 
+	let u = sin(frameCount*.03)*width/3
+	let o = cos(frameCount*.05)*height/3
+	let p = sin(frameCount*.3)*width/100
+//	fill(abs(sin(frameCount*.01))*random(255), random(255), random(255))
+	layer2.color(o, u, p)
+pop()
+
+image(layer, 0, 0)
+
+speedx += slider.value()
+speedy += slider1.value()
+
+layer3D.reset()
+layer3D.clear()
+layer3D.rotateY(speedy)
+layer3D.rotateX(speedx)
+//layer3D.rotateZ(frameCount * slider2.value())
+layer3D.noStroke()
+layer3D.scale(-1, 1)
+layer3D.texture(matisse)
+layer3D.sphere(height*slider2.value())
+layer3D.texture(layer)
+layer3D.sphere(height)
+
+
+layer3D.texture(mountain2)
+layer3D.sphere(height/2*slider4.value())
+
+
+	image(layer3D, 0, 0)
+
+
+
+// rect(mouseY, mouseX, frameCount%x/10, frameCount%x/10)
+
+//  speed += slider.value()
+//special instruction (style + transformations)
+
+//	circle(0, 0, 100)
+
+}
+
+
+</script>
+
+</body>
+</html>

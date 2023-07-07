@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>vvvvisuals</title>
+	<meta charset="utf-8">
+	<!-- Compiled w/ P5LIVE, http://github.com/ffd8/p5live -->
+	<style type="text/css">
+		body{
+			margin:0;
+			overflow:hidden;
+		}
+		canvas{
+			position:fixed;
+			top:0;
+			left:0;
+			z-index:-1;
+			width:100vw;
+			height:100vh;
+			margin:0;
+		}
+	</style>
+	<script type="text/javascript">
+		// eco-mode = only render if window focused
+		window.onblur = function () {
+			noLoop();
+		};
+		window.onfocus = function () {
+			loop();
+		};
+	</script>
+<script type="text/javascript" src="include/p5.min.js"></script>
+<script type="text/javascript" src="include/p5.sound.min.js"></script>
+</head>
+<body style="background: rgb(0, 0, 0);">
+
+<script type="text/javascript">
+//15_2d_v11_Final!
+
+/* CUSTOM FUNCTIONS FOR P5LIVE */
+// keep fullscreen if window resized
+function windowResized() {
+	resizeCanvas(windowWidth, windowHeight);
+}
+
+// custom ease function
+function ease(iVal, oVal, eVal){
+	return oVal += (iVal - oVal) * eVal;
+}
+
+// processing compatibility
+function println(msg){
+	print(msg);
+}
+
+
+let mic, fftRaw, fft = [], waveform = [], amp = 0.0, ampStereo = {l: 0.0,r: 0.0}, ampEase = 0.0, numBins = 512, bands = 12; // AUDIO INIT
+let peakLevels = [], easyfft = []; let rightPressed = false; let interfaceHide = false;
+let rotationAll=0, rotationSin=0; let fontName = googleFont('Roboto Condensed'); let LineCenter = new p5.Vector(0, 0);
+let sliderAmplitude, sliderZoom, sliderEasing, sliderDecay, sliderStrokeWeight, sliderStrokeAlpha, sliderTrails, sliderRotate;
+let sliderRingSize,sliderRingAlpha,sliderSwarmSize,sliderSwarmAlpha,sliderCompanionSize,sliderCompanionAlpha;
+let sliderLineAlpha, sliderLineSinSpeed, sliderLineSinYMult, sliderLineSinRadius, sliderBlendMode;
+
+var credits = { 
+	names : [ 
+		'<a href="https://hitthaler.com" target="_blank">Thomas.Hitthaler</a>'
+	] 
+	,class : 'IDCE SW23' 
+	,description : `A tool to control visuals. 
+	It's easy to add new sliders and to change their style.
+	The audio processing has some useful controls (Damper and Decay).
+	To change the visuals just put something else into the function
+	Press a+leftMouse to draw a little` 
+} 
+function setup() {
+	createCanvas(windowWidth, windowHeight); setupAudio(); 
+	styleDefinitions(); sliderConfig();
+}
+
+function draw() {
+	updateAudio(); easyFFT(sliderEasing.value(), sliderDecay.value())
+	lineControl();
+	visualGen()
+	}
+
+// VISUALS START
+function visualGen(){
+	background(0, 255 - sliderTrails.value())
+	drawMode()
+	noStroke()
+	translate(width / 2, height/2)
+	let zoomFactor = sliderZoom.value()
+	scale(zoomFactor, zoomFactor)
+	rotationAll+=sliderRotate.value()
+	rotate(rotationAll)
+	let fftCount = fft.length - 8 //128
+	for(let i = 0; i < fftCount; i++) {
+		let iPhase = i / fftCount
+		let amplitude = easyfft[i] * (1 + iPhase) * sliderAmplitude.value()
+		let circleScale = width / 12
+		let iMult = 2 * PI / fftCount
+		let modX = sin(i * iMult) * amplitude
+		let modY = cos(i * iMult) * amplitude
+		let posX = sin(i * iMult) * circleScale + modX
+		let posY = cos(i * iMult) * circleScale + modY
+		fill(200, sliderRingAlpha.value())
+		stroke(100, sliderStrokeAlpha.value())
+		circle(posX, posY, amplitude / 20*sliderRingSize.value()) // outer ring end of lines
+		stroke(100, sliderLineAlpha.value())
+		strokeWeight(sliderStrokeWeight.value())
+		line(LineCenter.x, LineCenter.y, posX, posY) //lines from center
+		stroke(100, sliderStrokeAlpha.value())
+		push()
+		translate(sin(i) * amplitude, cos(i) * amplitude)
+		rotate(((i / fftCount) * 2 * PI))
+		fill(255, sliderRingAlpha.value())
+		circle(0, 0, amplitude / 40*sliderRingSize.value()) // inner ring
+		rotate(-rotationAll)
+		translate(100, 0)
+		fill(255, sliderSwarmAlpha.value())
+		circle(0, 0, amplitude / 50 + sliderSwarmSize.value()) //Swarm
+		rotate(fft[i] / 100)
+		translate(0, 10)
+		fill(20, sliderCompanionAlpha.value())
+		stroke(200, sliderStrokeAlpha.value())
+		strokeWeight(sliderStrokeWeight.value())
+		circle(0, 0, amplitude / 20 * sliderCompanionSize.value()) //swarm companion
+		pop()
+	}
+}
+
+function lineControl() {
+	if (rightPressed == true) {
+		LineCenter.x = mouseX-width/2
+		LineCenter.y = mouseY-height/2
+	} else{
+	let sinSpeed = sliderLineSinSpeed.value()
+	let sinRadius = sliderLineSinRadius.value()
+	let piMultiX = 2*PI
+	let piMultiY= piMultiX*round(sliderLineSinYMult.value())
+	rotationSin += sinSpeed
+		LineCenter.x = sin(rotationSin*piMultiX)*height*sinRadius
+		LineCenter.y = cos(rotationSin*piMultiY)*height*sinRadius
+		//let d = cos(frameCount*baseScale*1)*100
+	}
+}
+
+function drawMode() {
+	let blendModes = [BLEND,ADD,DARKEST,LIGHTEST,DIFFERENCE,EXCLUSION, MULTIPLY,OVERLAY,HARD_LIGHT,SOFT_LIGHT, DODGE, BURN]
+	blendMode(blendModes[(round(sliderBlendMode.value()))])
+}
+
+// VISUALS END
+
+// INTERFACE START
+function sliderConfig() { 
+	textHolder = createDiv().class('textHolder'); guiHolder = createDiv().class('guiHolder')
+	createDiv('Trail Amount').parent(textHolder).class('label'); sliderTrails = createSlider(0, 255, 240, 0.1).parent(guiHolder).class('slider') 
+	createDiv('FFT Amplitude').parent(textHolder).class('label'); sliderAmplitude = createSlider(0, 2, 1, 0.001).parent(guiHolder).class('slider') 
+	createDiv('FFT Speed').parent(textHolder).class('label'); sliderEasing = createSlider(0.0001, 2, 0.5, 0.01).parent(guiHolder).class('slider') 
+	createDiv('FFT Decay Speed').parent(textHolder).class('label'); sliderDecay = createSlider(0, 40, 1.9, 0.01).parent(guiHolder).class('slider') 
+	createDiv('Rotation Speed').parent(textHolder).class('label'); sliderRotate = createSlider(0, 0.5, 0, 0.001).parent(guiHolder).class('slider') 
+	createDiv('Camera Zoom').parent(textHolder).class('label'); sliderZoom = createSlider(0.4, 5, 1, 0.1).parent(guiHolder).class('slider') 
+	createDiv('Ring Size').parent(textHolder).class('label'); sliderRingSize = createSlider(0.1, 40, 1, 0.01).parent(guiHolder).class('slider') 
+	createDiv('Ring Alpha').parent(textHolder).class('label'); sliderRingAlpha = createSlider(0, 255, 100, 0.1).parent(guiHolder).class('slider') 
+	createDiv('Swarm Size').parent(textHolder).class('label'); sliderSwarmSize = createSlider(0.1, 40, 1, 0.01).parent(guiHolder).class('slider') 
+	createDiv('Swarm Alpha').parent(textHolder).class('label'); sliderSwarmAlpha = createSlider(0, 255, 100, 0.1).parent(guiHolder).class('slider') 
+	createDiv('Companion Size').parent(textHolder).class('label'); sliderCompanionSize = createSlider(0.1, 40, 1, 0.01).parent(guiHolder).class('slider') 
+	createDiv('Companion Alpha').parent(textHolder).class('label'); sliderCompanionAlpha = createSlider(0, 255, 100, 0.1).parent(guiHolder).class('slider') 
+	createDiv('Stroke Alpha').parent(textHolder).class('label'); sliderStrokeAlpha = createSlider(0.01, 255, 100, 0.1).parent(guiHolder).class('slider') 
+	createDiv('Stroke Width').parent(textHolder).class('label'); sliderStrokeWeight = createSlider(0.01, 4, 1, 0.1).parent(guiHolder).class('slider') 
+	createDiv('Line Alpha').parent(textHolder).class('label'); sliderLineAlpha = createSlider(0, 255, 100, 0.1).parent(guiHolder).class('slider') 
+	createDiv('Line Radius').parent(textHolder).class('label'); sliderLineSinRadius = createSlider(0, 2, 0, 0.01).parent(guiHolder).class('slider') 
+	createDiv('Line Sin Speed').parent(textHolder).class('label'); sliderLineSinSpeed = createSlider(0, 0.2, 0, 0.001).parent(guiHolder).class('slider') 
+	createDiv('Line SinY Multi').parent(textHolder).class('label'); sliderLineSinYMult = createSlider(1, 20, 0, 1).parent(guiHolder).class('slider') 
+	createDiv('Blend Modes').parent(textHolder).class('label'); sliderBlendMode = createSlider(0, 11, 0, 1).parent(guiHolder).class('slider') 
+
+
+	menuHolder = createDiv().class('menuHolder')
+	createDiv('vvvvisuals').parent(menuHolder).class('headline')	
+}
+
+function styleDefinitions() { 
+  createElement('style', ` 
+  *{ 
+    outline: none; 
+    box-sizing: border-box; 
+  } 
+    .guiHolder{ 
+      position: fixed; 
+      right: 133px; 
+      top: 0px; 
+      width:300px;
+      border: 0px solid #222; 
+      border-radius: 2px; 
+      padding: 30px;
+      padding-top: 60px;
+      background-color: #BBB;
+      z-index: 2;
+    } 
+    .textHolder{ 
+      position: fixed; 
+      right: -4px; 
+      top: 47px; 
+      border: 0px solid #666; 
+      border-radius: 2px; 
+      padding-left: 5px;
+      padding-right: 30px;
+      padding-top: 5px;
+      padding-bottom: 5px;
+      background-color: #222;
+      z-index: 3;
+    } 
+    .menuHolder{ 
+      position: fixed; 
+      right: 184px; 
+      top: 0px; 
+      border: 0px solid #666; 
+      border-radius: 0px; 
+      padding-left: 0px;
+      padding-right: 0px;
+      padding-top: 0px;
+      padding-bottom: 0px;
+ //     background-color: #BBB;
+      z-index: 3;
+    } 
+    .label{ 
+      color:#fff; 
+      font-family: ${fontName};
+      font-weight: light;
+      font-size:14pt; 
+      padding:3.7px;
+      text-decoration:bold; 
+      text-align:left;
+      -webkit-user-select: none;
+      user-select: none;
+    } 
+     .headline{ 
+      color:#000; 
+      font-family: ${fontName};
+      font-weight: bold;
+      font-size:30pt; 
+      padding:2.4px;
+      text-decoration:bold; 
+      text-align:left;
+      -webkit-user-select: none;
+      user-select: none;
+    } 
+    .slider{ 
+      width: 100%;
+      padding: 10px;
+      z-index: 5;
+    } 
+    
+			
+			input[type=range] {
+  width: 100%;
+  margin: 4px 0;
+  background-color: transparent;
+  -webkit-appearance: none;
+}
+input[type=range]:focus {
+  outline: none;
+}
+input[type=range]::-webkit-slider-runnable-track {
+  background: #141414;
+  border: 0;
+  border-radius: 1.3px;
+  width: 100%;
+  height: 2px;
+  cursor: pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+  margin-top: -4px;
+  width: 16px;
+  height: 10px;
+  background: #1e1e1e;
+  border: 0;
+  cursor: pointer;
+  -webkit-appearance: none;
+}
+input[type=range]:focus::-webkit-slider-runnable-track {
+  background: #212121;
+}
+input[type=range]::-moz-range-track {
+  background: #141414;
+  border: 0;
+  border-radius: 1.3px;
+  width: 100%;
+  height: 2px;
+  cursor: pointer;
+}
+input[type=range]::-moz-range-thumb {
+  width: 16px;
+  height: 10px;
+  background: #1e1e1e;
+  border: 0;
+  cursor: pointer;
+}
+input[type=range]::-ms-track {
+  background: transparent;
+  border-color: transparent;
+  border-width: 5px 0;
+  color: transparent;
+  width: 100%;
+  height: 2px;
+  cursor: pointer;
+}
+input[type=range]::-ms-fill-lower {
+  background: #070707;
+  border: 0;
+  border-radius: 2.6px;
+}
+input[type=range]::-ms-fill-upper {
+  background: #141414;
+  border: 0;
+  border-radius: 2.6px;
+}
+input[type=range]::-ms-thumb {
+  width: 16px;
+  height: 10px;
+  background: #1e1e1e;
+  border: 0;
+  cursor: pointer;
+  margin-top: 0px;
+  /*Needed to keep the Edge thumb centred*/
+}
+input[type=range]:focus::-ms-fill-lower {
+  background: #141414;
+}
+input[type=range]:focus::-ms-fill-upper {
+  background: #212121;
+}
+/*TODO: Use one of the selectors from https://stackoverflow.com/a/20541859/7077589 and figure out
+how to remove the virtical space around the range input in IE*/
+@supports (-ms-ime-align:auto) {
+  /* Pre-Chromium Edge only styles, selector taken from hhttps://stackoverflow.com/a/32202953/7077589 */
+  input[type=range] {
+    margin: 0;
+    /*Edge starts the margin from the thumb, not the track as other browsers do*/
+  }
+}
+
+    `) 
+} 
+// INTERFACE END
+
+// AUDIO START
+function setupAudio() {
+	userStartAudio();
+	mic = new p5.AudioIn();
+	mic.start();
+	fftRaw = new p5.FFT(0.75, numBins);
+	fftRaw.setInput(mic);
+	
+// custom addons
+	updateAudio();
+	for(let i = 0; i < fft.length; i++) {
+		peakLevels[i] = 0
+		easyfft[i] = 0
+	}
+}
+function updateAudio() {
+	fftRaw.analyze();
+	amp = mic.getLevel() * 1000; // average mixed amplitude
+	ampStereo.l = mic.amplitude.getLevel(0) * 500; // average left amplitude
+	ampStereo.r = mic.amplitude.getLevel(1) * 500; // average right amplitude
+	ampEase = ease(amp, ampEase, 0.075); // smooth 'amp'
+	waveform = fftRaw.waveform(); // array (-1, 1)
+	fft = fftRaw.logAverages(fftRaw.getOctaveBands(bands)); // array (0, 255)
+}
+function easyFFT(easing, decay) {
+	for(let i = 0; i < fft.length; i++) {
+		if(fft[i] > peakLevels[i]) {
+			peakLevels[i] = fft[i]
+		}
+		peakLevels[i] += -decay
+		let dx = peakLevels[i] - easyfft[i];
+		easyfft[i] += dx * easing;
+	}
+}
+// AUDIO END
+
+function googleFont(fontName) {
+	let link = document.createElement("link")
+	link.href = "https://fonts.googleapis.com/css?family=" + encodeURI(fontName) + '&display=swap'
+	link.rel = "stylesheet"
+	document.head.appendChild(link)
+	return fontName
+}
+
+function mouseClicked() {
+    if(mouseButton === LEFT && key === 'a') {
+        rightPressed = true;
+        print('right')
+    }
+}
+    
+function keyReleased() {
+	rightPressed = false;
+}
+
+function keyPressed() {
+	if(key == 'h'&&hideInterface==true) {hideInterface = false;}
+	if(key == 'h'&&hideInterface==false) {hideInterface = true;}	
+}
+</script>
+
+</body>
+</html>

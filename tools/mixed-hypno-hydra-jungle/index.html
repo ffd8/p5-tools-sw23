@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>mixed-hypno-hydra-jungle</title>
+	<meta charset="utf-8">
+	<!-- Compiled w/ P5LIVE, http://github.com/ffd8/p5live -->
+	<style type="text/css">
+		body{
+			margin:0;
+			overflow:hidden;
+		}
+		canvas{
+			position:fixed;
+			top:0;
+			left:0;
+			z-index:-1;
+			width:100vw;
+			height:100vh;
+			margin:0;
+		}
+	</style>
+	<script type="text/javascript">
+		// eco-mode = only render if window focused
+		window.onblur = function () {
+			noLoop();
+		};
+		window.onfocus = function () {
+			loop();
+		};
+	</script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/addons/p5.sound.min.js"></script>
+<script type="text/javascript" src="https://unpkg.com/hydra-synth"></script>
+<script type="text/javascript" src="includes/libs/hydra-synth.js"></script>
+</head>
+<body style="background: rgb(0, 0, 0);">
+
+<script type="text/javascript">
+//_hydra_overlay_001
+
+/* CUSTOM FUNCTIONS FOR P5LIVE */
+// keep fullscreen if window resized
+function windowResized() {
+	resizeCanvas(windowWidth, windowHeight);
+}
+
+// custom ease function
+function ease(iVal, oVal, eVal){
+	return oVal += (iVal - oVal) * eVal;
+}
+
+// processing compatibility
+function println(msg){
+	print(msg);
+}
+
+
+/*	
+	_hydra_texture // cc ojack.xyz + teddavis.org 2021
+	edit hydra code within // hydraSandbox tags for changes w/o recompiling p5!
+	cheatsheets: https://ojack.xyz/hydra-functions/ + https://hydra-book.naotohieda.com/
+*/
+
+//halllo
+
+var credits = {
+	names: [
+		'<a href="https://nadineochsner.ch/" target="_blank">nadine.ochsner</a>' // link to website if you have it <a href="URL" target="_blank">first.lastname</a> 
+		, '<a href="https://leoniefelber.ch/" target="_blank">Leonie.Felber</a>'
+	],
+	class: 'IDCE SW23',
+	description: `mixing the two experiments up`
+}
+
+
+let libs = ['https://unpkg.com/hydra-synth', 'includes/libs/hydra-synth.js']
+let sliderNoise
+let sliderNoise2
+
+// 3D Form
+let detailX
+
+
+//Dropdown
+let mySelect, hydraMode; // global var for select + drawing mode 
+let opts = ['video', 'image', 'cam', 'p5'] // array of options 
+
+
+// hydra canvas + init
+let hc = document.createElement('canvas') // hydra canvas + custom size
+hc.width = 640
+hc.height = 360
+document.body.appendChild(hc)
+let hydra = new Hydra({
+	detectAudio: false, // no mic
+	canvas: hc, // use hydra canvas
+	makeGlobal: false, // scoped,
+	numOutputs: 8, // moooar outputs
+})
+let synth = hydra.synth // scoped hydra
+
+let pg // store hydra texture
+let p5Texture
+
+let mh = synth.o0
+	let p5on = false
+
+// sandbox - start
+
+
+//SourceVideo
+synth.s0.initVideo("https://media.giphy.com/media/AS9LIFttYzkc0/giphy.mp4")
+synth.src(synth.s0)
+	.modulate(synth.noise(() => sliderNoise.value()))
+	.modulateKaleid(synth.osc(10, 0.1, 0.1), () => sliderNoise2.value())
+	.out(synth.o0)
+
+//SourceImage
+synth.s1.initImage("https://upload.wikimedia.org/wikipedia/commons/2/25/Hydra-Foto.jpg")
+synth.src(synth.s1)
+	synth.voronoi(() => sliderNoise.value(),1,100).brightness(10)
+	.scale(1,0.5,0.05)
+	.out(synth.o1)
+
+//SourceCam
+synth.s2.initCam()
+synth.src(synth.s2)
+	.modulate(synth.noise(() => sliderNoise.value()))
+	.modulateKaleid(synth.osc(10, 0.1, 0.1), () => sliderNoise2.value())
+	.out(synth.o2)
+
+//P5
+synth.src(synth.o3)
+	.layer(synth.src(synth.s3))
+		.scale(.990)
+		.modulateScale(synth.src(synth.s3).pixelate(16, 30), .5)
+		.scrollY(-1.005)
+		.scrollX(-1.005)
+	// 	//bei Leonie ists .out()
+	.out(synth.o3)
+
+
+
+synth.render(synth.o0)
+// sandbox - stop
+
+let sliderWidth, sliderSensitivity, sliderX, sliderY, checkbox, resetbutton, sliderStrokeWeight
+let colorFill = 0
+
+function setup() {
+	createCanvas(windowWidth, windowHeight, WEBGL)
+	background(0)
+	pg = createGraphics(hc.width, hc.height)
+
+	synth.s3.init({
+		src: drawingContext.canvas
+	})
+	
+	p5Texture = createGraphics(hc.width, hc.height)
+	noStroke()
+
+let posY = height*0.05
+let posX = posY /2
+
+
+	//Dropdown
+	mySelect = createSelect() // create dropdown 
+		.position(posX, posY + 400) // set position 
+
+	// cycle array to add options 
+	for(let o of opts) {
+		mySelect.option(o)
+	}
+
+	// init with random option 
+	//drawMode = random(opts)
+	//mySelect.selected(drawMode);
+
+	// set hydraMode var on change 
+	mySelect.changed(function() {
+		hydraMode = this.value()
+		if(hydraMode == 'video') {
+			synth.render(synth.o0)
+			p5on = false
+		} else if(hydraMode == 'image') {
+			synth.render(synth.o1)
+			p5on = false
+		} else if(hydraMode == 'cam') {
+			synth.render(synth.o2)
+			p5on = false
+		} else if(hydraMode == 'p5') {
+			p5on = true
+			synth.render(synth.o3)
+		// } else if(hydraMode == 'shape') {
+		// 	synth.render(synth.o4)
+		// } else if(hydraMode == 'video1') {
+		// 	synth.render(synth.o5)
+		}
+
+	})
+
+
+	//sliders p5 
+	sliderNoise = createSlider(0, 255, 100) //min, max, default,step
+		.position(posX, posY + 600)
+		.class('slider')
+		
+	let pnoise = createP('Noise')
+		.style('color', 'white')
+		.style('background', 'black')
+		// .style('border','1px solid white')
+		.position(posX, posY + 570)
+
+	sliderNoise2 = createSlider(0.1, 100, 0.4) //min, max, default,step
+		.position(posX, posY + 650)
+		.class('slider')
+	let pnoisetwo = createP('Noise 2')
+		.style('color', 'white')
+		.style('background', 'black')
+		// .style('border','1px solid white')
+		.position(posX, posY + 620)
+
+	//3D Form WebGL
+	detailX = createSlider(3, 24, 3)
+	detailX.position(posX, posY + 700)
+	//detailX.position(1500, height + 5)
+	detailX.class('slider')
+	//detailX.style('width', '80px')
+let detailxp = createP('Detail X Sphere')
+		.style('color', 'white')
+		.style('background', 'black')
+		// .style('border','1px solid white')
+		.position(posX, posY + 670)
+
+
+
+	createElement('style', ` 
+  *{ 
+    outline: none; 
+    box-sizing: border-box;
+  } 
+   
+    .slider{ 
+    -webkit-appearance: none;
+	appearance: none;
+    width: 5%; 
+    background: #fffff;
+    cursor: pointer;
+    } 
+    
+    .slider::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	appearance: none;
+	width: 25px;
+	height: 25px;
+	background: #000000;
+	cursor: pointer;
+    }
+    
+    .label{ 
+      color:#fff; 
+      font-family:sans-serif; 
+      font-size:10pt; 
+      text-decoration:none; 
+      padding:5px; 
+    } 
+    `)
+
+
+
+	let p = createP('Width triangle')
+		.style('color', 'white')
+		.style('background', 'black')
+		// .style('border','1px solid white')
+		.position(posX, posY )
+
+	sliderWidth = createSlider(0, width, width / 2)
+		.position(posX, posY + 35)
+		.class('slider')
+
+	let p1 = createP('Audio Sensitivity')
+		.style('color', 'white')
+		.style('background', 'black')
+		.position(posX, posY + 40)
+
+	sliderSensitivity = createSlider(2, 30, 20)
+		.position(posX, posY + 75)
+		.class('slider')
+
+	let p2 = createP('Translate X')
+		.style('color', 'white')
+		.style('background', 'black')
+		.position(posX, posY + 80)
+
+	sliderX = createSlider(-width / 2, width, width / 4)
+		.position(posX, posY + 115)
+		.class('slider')
+
+	let p3 = createP('Translate Y')
+		.style('color', 'white')
+		.style('background', 'black')
+		.position(posX, posY + 120)
+
+	sliderY = createSlider(-height / 2, height, height / 4)
+		.position(posX, posY + 155)
+		.class('slider')
+
+	let p4 = createP('StrokeWeight')
+		.style('color', 'white')
+		.style('background', 'black')
+		.position(posX, posY + 160)
+
+	sliderStrokeWeight = createSlider(1, width / 4, 2)
+		.position(posX, posY + 195)
+		.class('slider')
+
+	checkbox = createCheckbox('invert', false)
+		.changed(myCheckedEvent)
+		.position(posX, posY + 220)
+		.style('color', 'white')
+		.style('background', 'black')
+
+	setupAudio();
+
+
+}
+
+function myCheckedEvent() {
+	if(checkbox.checked()) {
+		colorFill = 1
+		// console.log('Checking!');
+	} else {
+		colorFill = 0
+		// console.log('Unchecking!');
+	}
+}
+
+function draw() {
+	updateAudio();
+
+	//Auswahl hydraMode
+	//synth.render(synth.o1)
+
+
+	if(p5on) {
+		p5Texture.reset()
+		p5Texture.clear()
+		//p5Texture.background(frameCount%255, 0, 0)
+		//p5Texture.ellipse(frameCount%width, height / 2, 300)
+
+		p5Texture.fill(map(colorFill, 0, 1, 0, 255))
+		p5Texture.stroke(map(colorFill, 0, 1, 255, 0))
+		p5Texture.strokeWeight(sliderStrokeWeight.value())
+
+		let offset = 10
+
+		let x = sliderX.value() + sin(frameCount * 3) * offset
+		let y = sliderY.value() + cos(frameCount * .03) * offset
+
+		p5Texture.translate(x, y)
+		p5Texture.push()
+
+		p5Texture.rotate(frameCount/100)
+		//triangle verändern durch handy kippen
+
+		p5Texture.triangle(0, 0, sliderWidth.value(), 0, 0, ampEase * sliderSensitivity.value())
+		// triangle(0, 0, width/3, 0, 0, height/2)
+		p5Texture.pop()
+
+
+		p5Texture.drawingContext.drawImage(hc, 0, 0, pg.width, pg.height)
+		texture(p5Texture)
+
+		plane(width, height) // fill screen w/ texture
+
+		// torus(height/4, height/8, 50)
+
+		//	rotateY(millis() / 1000)
+		sphere(height / 3, detailX.value(), 16);
+	} else {
+		p5Texture.reset()
+		p5Texture.clear()
+		// grab + apply hydra texture
+		pg.reset()
+		pg.clear()
+		pg.drawingContext.drawImage(hc, 0, 0, pg.width, pg.height)
+		texture(pg)
+		plane(width, height) // fill screen w/ texture
+		rotateX(radians(frameCount / 8))
+		rotateY(radians(frameCount / 4))
+		sphere(height / 3, detailX.value(), 16);
+	}
+
+
+}
+
+
+
+
+/* AUDIO INIT */
+let mic, fftRaw, fft = [],
+	waveform = [],
+	amp = 0.0,
+	ampStereo = {
+		l: 0.0,
+		r: 0.0
+	},
+	ampEase = 0.0,
+	numBins = 512,
+	bands = 12;
+
+function setupAudio() {
+	userStartAudio();
+	mic = new p5.AudioIn();
+	mic.start();
+	fftRaw = new p5.FFT(0.75, numBins);
+	fftRaw.setInput(mic);
+}
+
+function updateAudio() {
+	fftRaw.analyze();
+	amp = mic.getLevel() * 1000; // average mixed amplitude
+	ampStereo.l = mic.amplitude.getLevel(0) * 500; // average left amplitude
+	ampStereo.r = mic.amplitude.getLevel(1) * 500; // average right amplitude
+	ampEase = ease(amp, ampEase, 0.075); // smooth 'amp'
+	waveform = fftRaw.waveform(); // array (-1, 1)
+	fft = fftRaw.logAverages(fftRaw.getOctaveBands(bands)); // array (0, 255)
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>triangle-jungle</title>
+	<meta charset="utf-8">
+	<!-- Compiled w/ P5LIVE, http://github.com/ffd8/p5live -->
+	<style type="text/css">
+		body{
+			margin:0;
+			overflow:hidden;
+		}
+		canvas{
+			position:fixed;
+			top:0;
+			left:0;
+			z-index:-1;
+			width:100vw;
+			height:100vh;
+			margin:0;
+		}
+	</style>
+	<script type="text/javascript">
+		// eco-mode = only render if window focused
+		window.onblur = function () {
+			noLoop();
+		};
+		window.onfocus = function () {
+			loop();
+		};
+	</script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/addons/p5.sound.min.js"></script>
+<script type="text/javascript" src="https://unpkg.com/hydra-synth"></script>
+<script type="text/javascript" src="includes/libs/hydra-synth.js"></script>
+</head>
+<body style="background: rgb(0, 0, 0);">
+
+<script type="text/javascript">
+//triangle-jungle
+
+/* CUSTOM FUNCTIONS FOR P5LIVE */
+// keep fullscreen if window resized
+function windowResized() {
+	resizeCanvas(windowWidth, windowHeight);
+}
+
+// custom ease function
+function ease(iVal, oVal, eVal){
+	return oVal += (iVal - oVal) * eVal;
+}
+
+// processing compatibility
+function println(msg){
+	print(msg);
+}
+
+
+/*	
+	_hydra_scope // cc ojack.xyz + teddavis.org 2021	
+	pass p5 canvas into hydra as source sketch surface manipulations 
+*/
+
+var credits = { 
+	names : [ 
+		'<a href="https://leoniefelber.ch/" target="_blank">Leonie.Felber</a>'
+	] 
+	,class : 'IDCE SW23' 
+	,description : `Try it with your phone (without the microphone but with deviceorientation and touches :) <a href="https://glitch.com/~puzzle-zinc-flyingfish" target="_blank">https://glitch.com/~puzzle-zinc-flyingfish</a>` 
+} 
+
+
+let libs = ['https://unpkg.com/hydra-synth', 'includes/libs/hydra-synth.js']
+
+// hydra canvas + init
+let hc = document.createElement('canvas')
+hc.width = window.innerWidth
+hc.height = window.innerHeight
+document.body.appendChild(hc)
+let hydra = new Hydra({
+	detectAudio: false,
+	canvas: hc,
+		makeGlobal: false, // scoped
+
+})
+let synth = hydra.synth // scoped hydra
+
+
+
+let pg // store hydra texture
+
+// sandbox - start
+synth.src(synth.o0)
+	// .layer(src(()=>clearInput))
+	.layer(synth.src(synth.s0))
+	.scale(.990)
+	.modulateScale(synth.src(synth.s0).pixelate(16, 30), .5)
+	// .kaleid(0)
+	.scrollY(-1.005)
+	.scrollX(-1.005)
+	 //.modulateScrollY(osc(10),0.5,0)
+	// .modulateRepeatY(osc(10), 5.0, ({time}) => Math.sin(time) * 5)
+	// .mult(osc(13,0.5,5))
+	// .invert([ ()=>1 ])
+	// .invert([1])
+	// .rotate( ()=>sin(frameCount*.01)*.01 ) // use p5 vars!
+	// .modulateScale(osc(5, .1), .02)
+	.out()
+// sandbox - stop
+
+
+
+let sliderWidth, sliderSensitivity, sliderX, sliderY, checkbox, resetbutton, sliderStrokeWeight
+let colorFill = 0
+
+
+
+function setup() {
+	createCanvas(windowWidth, windowHeight)
+
+	// pass p5 canvas to hydra as s0 source
+	synth.s0.init({
+		src: drawingContext.canvas
+	})
+	pg = createGraphics(hc.width, hc.height)
+
+	background(0)
+	angleMode(DEGREES)
+
+	let posY = height*0.07
+	let posX = posY /2
+
+	let p = createP('Width triangle')
+		.style('color', 'white')
+		.style('background', 'black')
+		// .style('border','1px solid white')
+		.position(posX, posY )
+
+	sliderWidth = createSlider(0, width, width / 2)
+		.position(posX, posY + 35)
+		.class('slider')
+
+	let p1 = createP('Audio Sensitivity')
+		.style('color', 'white')
+		.style('background', 'black')
+		.position(posX, posY + 40)
+
+	sliderSensitivity = createSlider(2, 30, 20)
+		.position(posX, posY + 75)
+		.class('slider')
+
+	let p2 = createP('Translate X')
+		.style('color', 'white')
+		.style('background', 'black')
+		.position(posX, posY + 80)
+
+	sliderX = createSlider(-width / 2, width, width / 4)
+		.position(posX, posY + 115)
+		.class('slider')
+
+	let p3 = createP('Translate Y')
+		.style('color', 'white')
+		.style('background', 'black')
+		.position(posX, posY + 120)
+
+	sliderY = createSlider(-height / 2, height, height / 4)
+		.position(posX, posY + 155)
+		.class('slider')
+
+	let p4 = createP('StrokeWeight')
+		.style('color', 'white')
+		.style('background', 'black')
+		.position(posX, posY + 160)
+
+	sliderStrokeWeight = createSlider(1, width / 4, 2)
+		.position(posX, posY + 195)
+		.class('slider')
+
+	checkbox = createCheckbox('invert', false)
+		.changed(myCheckedEvent)
+		.position(posX, posY + 220)
+		.style('color', 'white')
+		.style('background', 'black')
+		
+	// resetbutton  = createButton('reset')
+	// 	.position(10, 190)
+	// 	.mousePressed(resetSite)
+
+
+	setupAudio();
+}
+
+// function resetSite() {
+
+// 	clearInput = 's0'
+// }
+
+function myCheckedEvent() {
+  if (checkbox.checked()) {
+  	colorFill = 1
+    // console.log('Checking!');
+  } else {
+  	colorFill = 0
+    // console.log('Unchecking!');
+  }
+}
+
+function draw() {
+	/* audio vars: amp, ampEase, fft, waveform */
+	updateAudio();
+	
+	pg.drawingContext.drawImage(hc, 0, 0, pg.width, pg.height) // update texture
+
+	clear()
+	fill(map(colorFill,0,1,0,255))
+	stroke(map(colorFill,0,1,255,0))
+	strokeWeight(sliderStrokeWeight.value())
+
+	let offset = 10
+
+	let x = sliderX.value() + sin(frameCount * 3) * offset
+	let y = sliderY.value() + cos(frameCount * .03) * offset
+
+translate(x, y)
+	push()
+	
+	rotate(frameCount)
+	//triangle verändern durch handy kippen
+
+	triangle(0, 0, sliderWidth.value(), 0, 0, ampEase * sliderSensitivity.value())
+	// triangle(0, 0, width/3, 0, 0, height/2)
+	pop()
+
+}
+
+function keyPressed() {
+	if(key == 'S') {
+		pg.save('P5LIVE_hydra.png') // save hydra texture
+	}
+}
+
+
+
+
+// slider in hydra rein 
+// ()=>slider.value()
+
+/* AUDIO INIT */
+let mic, fftRaw, fft = [],
+	waveform = [],
+	amp = 0.0,
+	ampStereo = {
+		l: 0.0,
+		r: 0.0
+	},
+	ampEase = 0.0,
+	numBins = 512,
+	bands = 12;
+
+function setupAudio() {
+	userStartAudio();
+	mic = new p5.AudioIn();
+	mic.start();
+	fftRaw = new p5.FFT(0.75, numBins);
+	fftRaw.setInput(mic);
+}
+
+function updateAudio() {
+	fftRaw.analyze();
+	amp = mic.getLevel() * 1000; // average mixed amplitude
+	ampStereo.l = mic.amplitude.getLevel(0) * 500; // average left amplitude
+	ampStereo.r = mic.amplitude.getLevel(1) * 500; // average right amplitude
+	ampEase = ease(amp, ampEase, 0.075); // smooth 'amp'
+	waveform = fftRaw.waveform(); // array (-1, 1)
+	fft = fftRaw.logAverages(fftRaw.getOctaveBands(bands)); // array (0, 255)
+}
+</script>
+
+</body>
+</html>

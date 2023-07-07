@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>SW -23 3d texture_006</title>
+	<meta charset="utf-8">
+	<!-- Compiled w/ P5LIVE, http://github.com/ffd8/p5live -->
+	<style type="text/css">
+		body{
+			margin:0;
+			overflow:hidden;
+		}
+		canvas{
+			position:fixed;
+			top:0;
+			left:0;
+			z-index:-1;
+			width:100vw;
+			height:100vh;
+			margin:0;
+		}
+	</style>
+	<script type="text/javascript">
+		// eco-mode = only render if window focused
+		window.onblur = function () {
+			noLoop();
+		};
+		window.onfocus = function () {
+			loop();
+		};
+	</script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/addons/p5.sound.min.js"></script>
+<script type="text/javascript" src="https://unpkg.com/hydra-synth"></script>
+<script type="text/javascript" src="includes/libs/hydra-synth.js"></script>
+</head>
+<body style="background: rgb(0, 0, 0);">
+
+<script type="text/javascript">
+//SW -23 3d texture_006
+
+/* CUSTOM FUNCTIONS FOR P5LIVE */
+// keep fullscreen if window resized
+function windowResized() {
+	resizeCanvas(windowWidth, windowHeight);
+}
+
+// custom ease function
+function ease(iVal, oVal, eVal){
+	return oVal += (iVal - oVal) * eVal;
+}
+
+// processing compatibility
+function println(msg){
+	print(msg);
+}
+
+
+var credits = { 
+	names : [ 
+		'<a href="https://www.instagram.com/sonhongkyung/" target="_blank">Sonny</a>' // link to website if you have it <a href="URL" target="_blank">first.lastname</a> 
+		,'Hongkyung Son' 
+	] 
+	,class : 'IDCE SW23' 
+	,description : `Using Hydra texture which is reacted by amp and slides in an immersive virtual environment, Let's dance!!` 
+} 
+
+
+let tex1
+let tex2
+let tex3
+let tex4
+let tex5
+let tex6
+let tex7
+let tex8
+let tex9
+let sliderSize // creat global variable (everyone knows about it)
+let sliderSize2 // creat global variable (everyone knows about it)
+let sliderSize3 // creat global variable (everyone knows about it)
+let sliderSize4 // creat global variable (everyone knows about it)
+let sliderSize5 // creat global variable (everyone knows about it)
+let sliderSize6 // creat global variable (everyone knows about it)
+let libs = ['https://unpkg.com/hydra-synth', 'includes/libs/hydra-synth.js']
+let mySelect, drawMode; // global var for select + drawing mode 
+let opts = ['Roterdam', 'RoterdamD', 'TokyoTower', 'HanRiver', 'Gallery', 'Basel', 'Workshop', 'Time', 'Love', 'Webcam']
+let capture
+let button
+
+// hydra canvas + init
+let hc = document.createElement('canvas') // hydra canvas + custom size
+hc.width = 640
+hc.height = 360
+
+let hydra = new Hydra({detectAudio: false,canvas: hc})
+let pg // store hydra texture
+
+
+// sandbox1 - start
+// osc(30, .2, .8)
+osc(()=>sliderSize.value(), ()=>sliderSize2.value(), ()=>sliderSize3.value())
+	//src(s0)
+	.mask(osc(20,.2).rotate(()=>sliderSize6.value()))
+	.repeatX(()=>sliderSize4.value())
+	.repeatY(()=>sliderSize5.value())
+	// .repeatZ(20)
+	// .kaleid(ampEase)
+	.out()
+// sandbox - stop
+
+
+function preload() {
+	tex1 = loadImage('data/pano/rot.jpg')
+	tex2 = loadImage('data/pano/rot2.jpg')
+	tex3 = loadImage('data/pano/tokyo.jpg')
+	tex4 = loadImage('data/pano/river.jpg')
+	tex5 = loadImage('data/pano/gallery.jpg')
+	tex6 = loadImage('data/pano/cargo.jpg')
+	tex7 = loadImage('data/pano/dude.jpg')
+	tex8 = loadImage('data/image/watch3.jpg')
+	tex9 = loadImage('data/image/okong02.jpg')
+}
+
+function setup() {
+	createCanvas(windowWidth, windowHeight, WEBGL)
+	angleMode(DEGREES)
+	setupAudio();
+	
+	sliderSize = createSlider(0, 100, 30, .01) // min, mac, default, [step]
+	sliderSize.position(width/2, 50)
+	
+	sliderSize2 = createSlider(0, 2, 1, .001) // min, mac, default, [step]
+	sliderSize2.position(width/2+200, 50)
+	
+	sliderSize3 = createSlider(0, 2, 1, .001) // min, mac, default, [step]
+	sliderSize3.position(width/2+400, 50)
+	
+	sliderSize4 = createSlider(0, 120, 2, .1) // min, mac, default, [step]
+	sliderSize4.position(width/2, 100)
+	
+	sliderSize5 = createSlider(0, 120, 2, .1) // min, mac, default, [step]
+	sliderSize5.position(width/2+200, 100)
+	
+	sliderSize6 = createSlider(0, 360, 20, 1) // min, mac, default, [step]
+	sliderSize6.position(width/2+400, 100)
+	
+	pg = createGraphics(hc.width, hc.height)
+	pg.angleMode(DEGREES)
+	
+	s0.init({
+	 src: drawingContext.canvas
+	//src: tex5
+	})
+
+	mySelect = createSelect(); // create dropdown 
+	 mySelect.position(200, 50); // set position 
+ 
+  // cycle array to add options 
+  for(let o of opts) { 
+    mySelect.option(o) 
+  } 
+ 
+  // init with random option 
+  drawMode = random(opts) 
+  mySelect.selected(drawMode); 
+ 
+  // set drawMode var on change 
+  mySelect.changed(function() { 
+    drawMode = this.value() 
+  }); 
+ 
+  rectMode(CENTER); 
+  stroke(255); 
+  noFill(); 
+
+//for webcam
+push()
+createCanvas(windowWidth, windowHeight, WEBGL)
+ capture = createCapture(VIDEO);
+ //capture.size(320, 240);
+ capture.hide()
+ pop()
+ 
+ 
+// //for button
+// createCanvas(100, 100);
+//   background(0);
+//   button = createButton('ZEN');
+//   button.position(100, 50);
+//   button.mousePressed(changeBG);
+
+}
+
+
+
+function draw() {
+	/* audio vars: amp, ampEase, fft, waveform */
+	updateAudio();
+	background(0, 4)
+	// orbitControl(10)
+	// translate(0,0,map(mouseX,0, width, -4000, 4000))
+
+	noStroke()
+	
+	// for(start; stop; count){}
+	for(let i = 0; i < 10; i++) { // this code gets looped, use 'i' to be UNIQUEEE!!
+		// strokeWeight(0.3+i)
+		// circle(width/2+i*20, height/2+i*20, frameCount%360)
+		// circle(mouseX-1000, i*20, frameCount%360)
+		// rect(300+i*10, height/2+i*5, frameCount%360)
+		let y = height / 2 + sin(frameCount * .05 + i * 5)
+		let x = width / 3 + sin(frameCount * .01 + i * 5) * 150
+		// circle(i * 100, y, 100)
+	}
+	
+	// texture(tex7)
+	// rotateY(frameCount/10)
+	// ellipsoid(width+ampEase*3, height+ampEase*10)
+	
+
+//Dropdown button	
+  if(drawMode == 'Roterdam') { 
+	texture(tex1);
+	rotateY(frameCount/10);
+	ellipsoid(width+ampEase*3, height+ampEase*10);
+  } else if(drawMode == 'RoterdamD') { 
+	texture(tex2);
+	rotateY(frameCount/10);
+	ellipsoid(width+ampEase*3, height+ampEase*10);
+  } else if(drawMode == 'TokyoTower') { 
+	texture(tex3);
+	rotateY(frameCount/10);
+	ellipsoid(width+ampEase*3, height+ampEase*10);
+  } else if(drawMode == 'HanRiver') { 
+	texture(tex4);
+	rotateY(frameCount/10);
+	ellipsoid(width+ampEase*3, height+ampEase*10);
+  } else if(drawMode == 'Gallery') { 
+	texture(tex5);
+	rotateY(frameCount/10);
+	ellipsoid(width+ampEase*3, height+ampEase*10);
+  } else if(drawMode == 'Basel') { 
+	texture(tex6);
+	rotateY(frameCount/10);
+	ellipsoid(width+ampEase*3, height+ampEase*10);
+  } else if(drawMode == 'Workshop') { 
+	texture(tex7);
+	rotateY(frameCount/10);
+	ellipsoid(width+ampEase*3, height+ampEase*10);
+  } else if(drawMode == 'Time') { 
+	texture(tex8);
+	rotateY(frameCount/10);
+	ellipsoid(width+ampEase*3, height+ampEase*10);
+  } else if(drawMode == 'Love') { 
+	texture(tex9);
+	rotateY(frameCount/10);
+	ellipsoid(width+ampEase*3, height+ampEase*10);
+  } else if(drawMode == 'Webcam') { 
+	// background(255);
+	// image(capture, -width/2, -height/2, 320, 240);
+	// filter(INVERT);
+		texture(capture);
+	rotateY(frameCount/10);
+	ellipsoid(width+ampEase*3, height+ampEase*10);
+  } 
+  
+
+	push()
+	pg.clear()
+	pg.drawingContext.drawImage(hc, 0, 0, pg.width, pg.height)
+	// translate(width, height, -10)
+	texture(pg)
+	// plane(width, height) // fill screen w/ texture
+	// rotateX(radians(frameCount / 8))
+	// rotateY(radians(frameCount / 4))
+	ellipsoid(-width-100+ampEase*16, height-100+ampEase*20)
+	pop()
+}
+
+/* AUDIO INIT */
+let mic, fftRaw, fft = [],
+	waveform = [],
+	amp = 0.0,
+	ampStereo = {
+		l: 0.0,
+		r: 0.0
+	},
+	ampEase = 0.0,
+	numBins = 512,
+	bands = 12;
+
+function setupAudio() {
+	userStartAudio();
+	mic = new p5.AudioIn();
+	mic.start();
+	fftRaw = new p5.FFT(0.75, numBins);
+	fftRaw.setInput(mic);
+}
+
+function updateAudio() {
+	fftRaw.analyze();
+	amp = mic.getLevel() * 1000; // average mixed amplitude
+	ampStereo.l = mic.amplitude.getLevel(0) * 500; // average left amplitude
+	ampStereo.r = mic.amplitude.getLevel(1) * 500; // average right amplitude
+	ampEase = ease(amp, ampEase, 0.075); // smooth 'amp'
+	waveform = fftRaw.waveform(); // array (-1, 1)
+	fft = fftRaw.logAverages(fftRaw.getOctaveBands(bands)); // array (0, 255)
+}	   ////////////////////////////////////////////////////////////////////
+</script>
+
+</body>
+</html>

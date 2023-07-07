@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>gay_is_gut_final_project_001</title>
+	<meta charset="utf-8">
+	<!-- Compiled w/ P5LIVE, http://github.com/ffd8/p5live -->
+	<style type="text/css">
+		body{
+			margin:0;
+			overflow:hidden;
+		}
+		canvas{
+			position:fixed;
+			top:0;
+			left:0;
+			z-index:-1;
+			width:100vw;
+			height:100vh;
+			margin:0;
+		}
+	</style>
+	<script type="text/javascript">
+		// eco-mode = only render if window focused
+		window.onblur = function () {
+			noLoop();
+		};
+		window.onfocus = function () {
+			loop();
+		};
+	</script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
+<script type="text/javascript" src="https://unpkg.com/hydra-synth"></script>
+<script type="text/javascript" src="includes/libs/hydra-synth.js"></script>
+</head>
+<body style="background: rgb(0, 0, 0);">
+
+<script type="text/javascript">
+//gay_is_gut_final_project_001
+
+/* CUSTOM FUNCTIONS FOR P5LIVE */
+// keep fullscreen if window resized
+function windowResized() {
+	resizeCanvas(windowWidth, windowHeight);
+}
+
+// custom ease function
+function ease(iVal, oVal, eVal){
+	return oVal += (iVal - oVal) * eVal;
+}
+
+// processing compatibility
+function println(msg){
+	print(msg);
+}
+
+
+//no p5sound
+let speed_rot=0
+let backColor = 0, sliderSpeed, sliderBend, sliderLength
+let libs = ['https://unpkg.com/hydra-synth', 'includes/libs/hydra-synth.js']
+let text_espanol = 'Oh mierda, soy muy maraica' 
+let	text_deutsch = 'Oh Scheiße, ich bin lesben und gay und transgender!'
+let	text_francais = 'Oh merde, je suis gay'
+let	text_english = 'Oh shit, I am gay'
+let text_hebrew = 'אוי חרא,אני מוזר'
+//let text_hebrew = '' 
+let discrim_array = [text_espanol, text_deutsch, text_francais, text_english, text_hebrew]
+let vid;
+
+var credits = { 
+	names : [ 
+		'Anne Lifton' // link to website if you have it <a href="URL" target="_blank">first.lastname</a> 
+	] 
+	,class : 'IDCE SW23' 
+	,description : `universality of experience is impractical, but community is available` 
+} 
+
+
+// hydra canvas + init
+let hc = document.createElement('canvas') // hydra canvas + custom size
+hc.width = 640
+hc.height = 360
+let hydra = new Hydra({
+	detectAudio: false,
+	canvas: hc,
+	//canvas: document.getElementById("canvas")
+})
+
+let pg // store hydra texture
+
+
+// sandbox - start
+bpm = 60
+
+gradient(5).
+mask(voronoi(),15,.9,.5)
+.color([1,0,0,1,0],[0,1,0,1,0],[0,0,1,1,0])
+.colorama([0.15,0.33,0.66,1.0]
+.fast(0.025))
+.invert([0,1])
+.out(o0)
+// sandbox - stop
+
+function preload() {
+	font_a = loadFont("data/NotoSerif-Regular.ttf")
+	font_b = loadFont("data/MiriamLibre-Regular.otf")
+}
+function setup() {
+	createCanvas(windowWidth, windowHeight, WEBGL)
+	background(0)
+	pg = createGraphics(hc.width, hc.height)
+	noStroke()
+	push()
+	translate(-width/2,-height/2)
+	sliderSpeed = createSlider(1, 250, 10);
+  sliderSpeed.position(.323*width,.48*height);
+  sliderSpeed.style('transform', 'rotate(270deg)')
+  sliderSpeed.style('width', '120px');
+  sliderBend = createSlider(-1000, 2500, 100);
+  sliderBend.position(.453*width, .48*height);
+  sliderBend.style('width', '140px');
+  sliderBend.style('transform', 'rotate(270deg)')
+  sliderQuant = createSlider(1, 40, 5);
+  sliderQuant.position(.595*width, .48*height);
+  sliderQuant.style('width', '120px');
+  sliderQuant.style('transform', 'rotate(270deg)')
+  pop()
+	textAlign(CENTER, CENTER)
+	fill(255)
+}
+
+
+
+
+function draw() {
+	pg.clear()
+	pg.drawingContext.drawImage(hc, 0, 0, pg.width, pg.height)
+	background(0,1)
+	stroke(255)
+	let speed = sliderSpeed.value();
+	strokeWeight(5+speed/10)
+	texture(pg)
+	cylinder(200,100)
+	textFont(font_a)
+
+	//if(frameCount%30==0)print(frameRate())
+	push()
+	textSize(.015*windowWidth)
+	rotateY(.1*frameCount%1000)
+	index_text = floor((frameCount % 1000) / 200)
+	print(index_text)
+	if (index_text==4){
+		textFont(font_b)
+		print("font_b")
+	}
+	text(discrim_array[index_text], 0,.15*height)
+	fill(255)
+	pop()
+	textSize(windowWidth / 19)
+	//fill(60, 100, 100 - index_text * 25)
+	//fill(255)
+
+	push()
+	translate(-width / 2, -height / 2)
+	//image(image_array[index_text],.9* width, .9*height); // then draw the image! 
+    let bend = sliderBend.value();
+    let quant = sliderQuant.value();
+	x0 = 0, y0 = 0
+	x1 = 185, y1 = 120
+	x2 = x1 + 190, y2 = y1 + 190
+	translate(frameCount % width, frameCount % height)
+	//noFill()
+	speed_rot  +=.01 +speed/1000;
+	//rotatespeed = speed*.0005 / index * frameCount % (width)
+	for(let index = 1; index <= quant; index++) {
+		rotate(speed_rot)
+		strokeWeight(5)
+		line(x0, y0, x1, y1)
+		line(x1, y1, x2, y2)
+		//bezier(x1,y1,x2,y2)
+		midslope = -(x1 - x0) / (y1 - y0)
+		midx1 = (x1 + x0) / 2 + bend
+		midy1 = midslope * (midx1 - (x1 + x0) / 2) + (y1 + y0) / 2
+		line((x1 + x0) / 2, (y1 + y0) / 2, midx1, midy1)
+		midslope = -(x2 - x1) / (y2 - y1)
+		midx2 = (x2 + x1) / 2 - bend
+		midy2 = midslope * (midx2 - (x2 + x1) / 2) + (y2 + y1) / 2
+		line((x2 + x1) / 2, (y2 + y1) / 2, midx2, midy2)
+		strokeWeight(15)
+		point((x1 + x0) / 2, (y1 + y0) / 2)
+		point((x2 + x1) / 2, (y2 + y1) / 2)
+		strokeWeight(1+speed/20)
+		//fill(100, 10 + index + frameCount % 200, 10, 10)
+		bezier(x0, y0, midx1 + index, midy1 + index, x1, y1, midx2, midy2, x2, y2, midx1, midy1, x1, y1);
+		//fill(20, 100, 10 + map(mouseX, 0, width, 0, 255), 10)
+		bezier(midx1 + index, midy1 + index, x0, y0, midx2 + frameCount % 500, midy2 + frameCount % 500, x2, y2, midx1, midy1, x1, y1);
+	}
+	pop()
+}
+</script>
+
+</body>
+</html>
