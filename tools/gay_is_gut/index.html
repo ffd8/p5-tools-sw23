@@ -147,10 +147,10 @@ function draw() {
 	textSize(.015*windowWidth)
 	rotateY(.1*frameCount%1000)
 	index_text = floor((frameCount % 1000) / 200)
-	print(index_text)
+	// print(index_text)
 	if (index_text==4){
 		textFont(font_b)
-		print("font_b")
+		// print("font_b")
 	}
 	text(discrim_array[index_text], 0,.15*height)
 	fill(255)
