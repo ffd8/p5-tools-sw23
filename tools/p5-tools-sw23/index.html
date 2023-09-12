@@ -29,7 +29,6 @@
 		};
 	</script>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
-<!-- <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/addons/p5.sound.min.js"></script> -->
 </head>
 <body style="background: rgb(0, 0, 0);">
 
@@ -61,6 +60,7 @@ var credits = {
 	description: `In this workshop we explored generative design + creative-coding using <a href='https://p5js.org'>p5.js</a> via <a href='https://p5live.org' target='_blank'>P5LIVE</a>. <br><br>Once dangerous, we began developing custom tools using the DOM elements (sliders, buttons, checkboxes) to change variables throughout the code.<br><br>When creating your own tools, the possibilities of digital design becomes endless. Enjoy exploring these tools!`
 }
 
+// no p5sound
 let fcText = 0,
 	fcGrid = 0
 
@@ -225,8 +225,10 @@ function draw() {
 	text('p5-tools-sw', 0, 0)
 	pop()
 
-	pinStripe(gridCount.value(), fcGrid / 18, color(fcGrid % gc1.value()), strokeWeightGrid.value())
-	pinStripe(gridCount.value(), -fcGrid / 18, color(fcGrid % gc2.value()), strokeWeightGrid.value())
+	// pinStripe(gridCount.value(), fcGrid / 18, color(fcGrid % gc1.value()), strokeWeightGrid.value())
+	// pinStripe(gridCount.value(), -fcGrid / 18, color(gc2.value()-fcGrid % gc1.value()), strokeWeightGrid.value())
+	pinStripe(gridCount.value(), fcGrid / 18, color(fcGrid %gc1.value()), strokeWeightGrid.value())
+	pinStripe(gridCount.value(), -fcGrid / 18, color(fcGrid %gc2.value()), strokeWeightGrid.value())
 }
 
 function pinStripe(loopCount = 10, rot = 0, col = 255, sw = 1) {
