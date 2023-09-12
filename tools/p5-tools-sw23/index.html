@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>new_145</title>
+	<title>sw23-pinstripe-gui-tool</title>
 	<meta charset="utf-8">
 	<!-- Compiled w/ P5LIVE, http://github.com/ffd8/p5live -->
 	<style type="text/css">
@@ -29,11 +29,12 @@
 		};
 	</script>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
+<!-- <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/addons/p5.sound.min.js"></script> -->
 </head>
 <body style="background: rgb(0, 0, 0);">
 
 <script type="text/javascript">
-//new_145
+//sw23-pinstripe-gui-tool
 
 /* CUSTOM FUNCTIONS FOR P5LIVE */
 // keep fullscreen if window resized
@@ -52,26 +53,236 @@ function println(msg){
 }
 
 
-// no p5sound
-
 var credits = {
-	names : [
-		'ted.davis' // link to website if you have it <a href="URL" target="_blank">first.lastname</a>
-	]
-	,class : 'IDCE SW23'
-	,description : `details coming soon...`
+	names: [
+		'<a href="https://teddavis.org" target="_blank">ted.davis</a>' // link to website if you have it <a href="URL" target="_blank">first.lastname</a>
+	],
+	class: 'IDCE SW23',
+	description: `In this workshop we explored generative design + creative-coding using <a href='https://p5js.org'>p5.js</a> via <a href='https://p5live.org' target='_blank'>P5LIVE</a>. <br><br>Once dangerous, we began developing custom tools using the DOM elements (sliders, buttons, checkboxes) to change variables throughout the code.<br><br>When creating your own tools, the possibilities of digital design becomes endless. Enjoy exploring these tools!`
 }
+
+let fcText = 0,
+	fcGrid = 0
 
 function setup() {
 	createCanvas(windowWidth, windowHeight)
-	// background(0)
+	angleMode(DEGREES)
+	buildGUI()
+}
+
+function buildGUI() {
+	guiHolder = createDiv('')
+		.class('gui')
+
+	createDiv('– p5-tools-sw –').draggable(guiHolder).class('gui-bar').parent(guiHolder)
+
+	createDiv('GRID').class('label').parent(guiHolder)
+	gridCount = createSlider(3, 100, 25, 1)
+		.parent(guiHolder)
+	strokeWeightGrid = createSlider(0.0, 10, .5, .01)
+		.parent(guiHolder)
+
+	speedGrid = createSlider(0.1, 3, 1, .01)
+		.parent(guiHolder)
+
+	gridColors = createDiv('').parent(guiHolder).class('color-holder')
+
+	gc1 = createSlider(0, 255, 255, .1).parent(gridColors)
+	gc2 = createSlider(0, 255, 0, .1).parent(gridColors)
+
+	createElement('hr').parent(guiHolder)
+
+
+
+	createDiv('TEXT').class('label').parent(guiHolder)
+	sizeText = createSlider(0.01, 1, .2, .01)
+		.parent(guiHolder)
+	strokeWeightText = createSlider(0.01, 10, .5, .01)
+		.parent(guiHolder)
+	speedText = createSlider(0.1, 4, .015, .01)
+		.parent(guiHolder)
+	createElement('hr').parent(guiHolder)
+
+
+	createDiv('CLEAR').class('clear').parent(guiHolder).mousePressed(() => {
+		clear()
+	})
+	// buttonsHolder = createDiv('').class('buttons-holder').parent(guiHolder)
+	// createButton('CLEAR').parent(buttonsHolder).mousePressed(()=>{clear()})
+
+	// sSpeed = createSlider(2, 100, 10)
+	// 	.parent(guiHolder)
+
+	// createDiv('MODULATE').class('label').parent(guiHolder)
+	// sModular = createSlider(0, 100, 11)
+	// 	.parent(guiHolder)
+
+	// createDiv('SIZE OFFSET').class('label').parent(guiHolder)
+	// sSizeSpeed = createSlider(1, 4000, 100)
+	// 	.style('float', 'left')
+	// 	.parent(guiHolder)
+
+	// cbSize = createCheckbox('', false)
+	// 	.parent(guiHolder)
+
+	// dynamic CSS
+	createElement('style', `
+		@font-face {
+		  font-family: 'roboto_mono';
+		  src: url('data/fonts/robotomono-regular-webfont.woff2') format('woff2');
+		  font-weight: 400;
+		  font-style: normal;
+		}
+	
+		.gui{
+			position:fixed;
+			right:15px;
+			top:15px;
+			font-family:'roboto_mono', sans-serif;
+			width:175px;
+			color:#fff;
+			background:rgba(0, 0, 0, .5);
+			border:1px solid #fff;
+			border-radius:10px;
+			// padding:20px;
+			 -webkit-user-select: none; /* Safari */
+			  -ms-user-select: none; /* IE 10 and IE 11 */
+			  user-select: none; /* Standard syntax */
+		}
+		.gui-bar, .clear{
+			background:rgba(0, 0, 0, .5);
+			text-align:center;
+			// font-size:13pt;
+			// background:#555;
+			border-bottom:1px solid #fff;
+			padding:5px;
+			border-radius:10px 10px 0 0px;
+			font-weight:bold;
+		}
+		.clear{
+			border:none;
+			background:#222;
+			border-radius:0px 0px 10px 10px;
+			margin:0;
+			font-size:1em;
+			cursor:pointer;
+		}
+		.label{
+			// letter-spacing:.5em;
+			margin:15px 0 0 15px;
+			padding-bottom:5px;
+			font-weight:bold;
+			// font-family:sans-serif;
+		}
+		hr{
+			border:none;
+			border-bottom:1px solid #fff;
+			margin:10px 0 0 0;
+		}
+		.buttons-holder{
+			padding:5px;
+		}
+		input{
+			margin-left:15px;
+			outline:none;
+			height:8px;
+			padding:5px;
+		}
+		.color-holder{
+			display:flex;
+			width:80%;
+			flex-direction: row ;
+			flex-flow: row;
+			align-items: stretch;
+			margin-left:15px;
+			// background:red;
+			// width:100%;
+			// position:relative;
+		}
+		.color-holder input{
+			width:20%;
+			flex: 3;
+			margin:0;
+			// margin-right:5px;
+		}
+	`)
 }
 
 function draw() {
-	fill(255, random(5, 150))
-	textSize(random(5, 25))
-	text('GUI – coming soon', random(width), random(height))
+	background(0, 1)
+	fcText += speedText.value()
+	fcGrid += speedGrid.value()
+
+	push()
+	noFill()
+	stroke(noise(fcText * .01) * 255)
+	strokeWeight(strokeWeightText.value())
+	// textSize(180 + sin(fcText*.3)*height*.2)
+	textSize(width * sizeText.value() + sin(fcText * .1) * 30)
+	textAlign(CENTER, CENTER)
+	translate(width / 2, height / 2) //+ sin(fcText * .3) * height * .4)
+	rotate(fcText)
+	text('p5-tools-sw', 0, 0)
+	pop()
+
+	pinStripe(gridCount.value(), fcGrid / 18, color(fcGrid % gc1.value()), strokeWeightGrid.value())
+	pinStripe(gridCount.value(), -fcGrid / 18, color(fcGrid % gc2.value()), strokeWeightGrid.value())
 }
+
+function pinStripe(loopCount = 10, rot = 0, col = 255, sw = 1) {
+	stroke(col)
+	strokeWeight(sw)
+	push()
+	translate(width / 2, height / 2)
+	rotate(rot)
+	for(let i = 0; i < loopCount; i++) {
+		let x = map(i, 0, loopCount - 1, -width / 1.5, width / 1.5)
+		line(x, -height, x, height)
+	}
+	pop()
+}
+
+// draggable snippet
+p5.Element.prototype.draggable = function(elmnt = this.elt) {
+	let pos1 = 0,
+		pos2 = 0,
+		pos3 = 0,
+		pos4 = 0;
+	if(elmnt !== this.elt && elmnt.elt !== this.elt) {
+		elmnt = elmnt.elt;
+		this.elt.addEventListener('mousedown', dragMouseDown, false);
+		this.elt.style.cursor = 'move';
+	} else {
+		elmnt.addEventListener('mousedown', dragMouseDown, false);
+		elmnt.style.cursor = 'move';
+	}
+
+	function dragMouseDown(e) {
+		e = e || window.event;
+		pos3 = parseInt(e.clientX);
+		pos4 = parseInt(e.clientY);
+		document.addEventListener('mouseup', closeDragElement, false);
+		document.addEventListener('mousemove', elementDrag, false);
+		return false;
+	}
+
+	function elementDrag(e) {
+		e = e || window.event;
+		pos1 = pos3 - parseInt(e.clientX);
+		pos2 = pos4 - parseInt(e.clientY);
+		pos3 = parseInt(e.clientX);
+		pos4 = parseInt(e.clientY);
+		elmnt.style.top = elmnt.offsetTop - pos2 + 'px';
+		elmnt.style.left = elmnt.offsetLeft - pos1 + 'px';
+	}
+
+	function closeDragElement() {
+		document.removeEventListener('mouseup', closeDragElement, false);
+		document.removeEventListener('mousemove', elementDrag, false);
+	}
+
+	return this;
+};
 </script>
 
 </body>
